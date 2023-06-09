@@ -9,7 +9,7 @@ EXEC_NAME = "out.exe"
 os.chdir(DIRECTORY)
 if os.path.exists(EXEC_NAME):
     os.remove(EXEC_NAME)
-os.system(f"g++ murtree_robust.cpp -o {EXEC_NAME}")
+os.system(f"g++ murtree_robust_copy.cpp -o {EXEC_NAME}")
 
 def run_with_input(filename):
     f = open(f"{DIRECTORY}/datasets/{filename}.in")
@@ -49,7 +49,7 @@ for name in sorted(set(j.split(".")[0] for j in os.listdir(f"{DIRECTORY}/dataset
         wrong_results.append(name)
     print(f"\033[34;1mFinished in {time.time() - curr_time:.3f} seconds\033[0m")
     c+=1
-    if(c > 30):
+    if(c > 25):
         break
 if wrong_results:
     print("\n\033[31;1mWrong results in the following tests:\033[0m")

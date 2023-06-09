@@ -227,10 +227,11 @@ int Graph::getMaxFlow(int s, int t)
 // Driver program to test above functions
 // int main()
 // {
-// 	int V = 5;
+// 	int V = 6;
 // 	Graph g(V);
+// 	//Graph g1(V);
 //     int source = 0;
-//     int sink = 4;
+//     int sink = 5;
 //     int currentNode = 1;
 // 	// Creating above shown flow network
 // 	// for(int c = 0; c < 10; c++){
@@ -257,8 +258,11 @@ int Graph::getMaxFlow(int s, int t)
 // 	// g.addEdge(4, 5, 4);
 
 // 	// Initialize source and sink
-// 	int s = 0, t = 1;
-
+// 	int s = 0, t = sink;
+// 	g.addEdge(source,4,10);
+//     g.addEdge(4, sink, 20);
+// 	cout << "Maximum flow is " << g.getMaxFlow(s, t) << endl;
+	
 // 	cout << "Maximum flow is " << g.getMaxFlow(s, t);
 // 	return 0;
 // }

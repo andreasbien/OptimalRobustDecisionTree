@@ -653,6 +653,7 @@ tree_solutions* calculate_smallest_misclassification(const vector<instance_t*> i
             tree_solutions* candidates = new tree_solutions;  // Initialize pointer with valid object
             candidates->upperBound = lowest_bound_sofar;
             candidates->lowerBound = lowest_bound_sofar;
+
             // for (tree_solutions* solution : viable_solutions) {
                 
             //     filter(*candidates, *solution);
@@ -673,7 +674,7 @@ tree_solutions* calculate_smallest_misclassification(const vector<instance_t*> i
             // cerr << "checkpoint4" << endl;
             
             mem.insert({key,candidates});
-
+            return candidates;
         }
 
         // Cache the calculated value
@@ -763,6 +764,7 @@ int main() {
         feature_list.push_back(i);
     }
     //int depth = 3;
+    
     cerr << insts.size() << endl;
     tree_solutions* optimalTree = calculate_smallest_misclassification(insts,globalInsts, depth, path, INF/2, feature_list);
     //printTree(optimalTree->trees[0], optimalTree->upperBound);
