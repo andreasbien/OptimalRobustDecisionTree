@@ -19,6 +19,7 @@
 #include "tree.h"
 #include "instance_t.h"
 #include "readDatasets.cpp"
+#include <limits>
 
 #define INF INT32_MAX / 2
 
@@ -35,6 +36,21 @@ struct tree_solutions {
     int upperBound;
     vector<tree*> trees = {};
 };
+
+struct pairs {
+    tree_solutions* solutionLeft;
+    tree_solutions* solutionRight;
+    int featureSplit;
+    pairs(tree_solutions* solutionLeft, tree_solutions* solutionRight, int featureSplit){
+        this->solutionLeft = solutionLeft;
+        this->solutionRight = solutionRight;
+        this->featureSplit = featureSplit;
+    }
+};
+
+bool compareBySolutionsAmount(const pairs& a, const pairs& b) {
+    return a.solutionLeft->trees.size() * a.solutionRight->trees.size() < b.solutionLeft->trees.size() * b.solutionRight->trees.size();
+}
 
 bool compareByLowerBound(const tree* a, const tree* b) {
     return a->lowerBound < b->lowerBound;
@@ -53,20 +69,29 @@ bool compareByLowerBound(const tree* a, const tree* b) {
  * which we had to solve the problem, most likely due to choices
  * made in the binarization step.
  */
-vector<instance_t*> filter_instects(vector<instance_t*> insts) {
+vector<instance_t*> filter_instects(vector<instance_t*> insts, int maxFeatures, int maxInstances) {
     // Height = amount of instances
     // Width = amount of features
     int height = insts.size();
     int width = insts[0]->features.size();
 
     vector<instance_t*> filtered_insts {};
+
+    int c = 0;
     for (instance_t* inst : insts) {
+        c++;
+        if(c > maxInstances)
+            break;
         instance_t* filtered_inst = new instance_t;
         *filtered_inst = {inst->label, {inst->features[0]}};
         filtered_insts.push_back(filtered_inst);
+        
+        // delete = inst;
     }
 
+    int w = 0;
     for (int ix = 1; ix < width; ix++) {
+        
         int c[2] {0, 0};
         for (instance_t* inst : insts) {
             c[inst->features[ix]]++;
@@ -84,18 +109,24 @@ vector<instance_t*> filter_instects(vector<instance_t*> insts) {
         if (complement)
             continue;
 
-        for (int iy = 0; iy < height; iy++) {
+        w++;
+        if(w > maxFeatures)
+            break;
+        for (int iy = 0; iy < maxInstances; iy++) {
             filtered_insts[iy]->features.push_back(insts[iy]->features[ix]);
         }
     }
+
+    for (instance_t* inst : insts)
+        delete inst;
 
     return filtered_insts;
 }
 
 /*
-Randomly changes 5% of the features in the dataset to 2.
+Randomly changes adversary_attack_power % of the features in the dataset to 2.
 */
-void randomlyChangeFeatures(std::vector<instance_t*>& instances) {
+void randomlyChangeFeatures(std::vector<instance_t*>& instances, float adversary_attack_power) {
     // Calculate the total number of features across all instances.
     size_t totalFeatureCount = 0;
     for (const auto& instance : instances) {
@@ -103,7 +134,7 @@ void randomlyChangeFeatures(std::vector<instance_t*>& instances) {
     }
 
     // Calculate the number of features to change.
-    size_t featuresToChange = static_cast<size_t>(totalFeatureCount * 0.15);
+    size_t featuresToChange = static_cast<size_t>(totalFeatureCount * adversary_attack_power);
 
     // Use a random number generator.
     std::default_random_engine generator;
@@ -136,32 +167,32 @@ map<long long, tree_solutions*> mem = {};
 
 map<long long, int> memCheck = {};
 // map<int, vector<tree*>> mem = {};
-bool compareByPath(const int& feature1,const int& feature2, int depth,long long path[5]) {
-    path[depth] = 0;
-    path[depth] = feature1 + 1;
-    long long key = (((path[4] * 1000 + path[3]) * 1000 + path[2])*1000 + path[1]) * 1000 + path[0];
+// bool compareByPath(const int& feature1,const int& feature2, int depth,long long path[5]) {
+//     path[depth] = 0;
+//     path[depth] = feature1 + 1;
+//     long long key = (((path[4] * 1000 + path[3]) * 1000 + path[2])*1000 + path[1]) * 1000 + path[0];
     
-    path[depth] = 0;
-    path[depth] = feature1 + 501;
-    long long key2 = (((path[4] * 1000 + path[3]) * 1000 + path[2])*1000 + path[1]) * 1000 + path[0];
+//     path[depth] = 0;
+//     path[depth] = feature1 + 501;
+//     long long key2 = (((path[4] * 1000 + path[3]) * 1000 + path[2])*1000 + path[1]) * 1000 + path[0];
     
-    path[depth] = 0;
-    path[depth] = feature2 + 1;
-    long long key3 = (((path[4] * 1000 + path[3]) * 1000 + path[2])*1000 + path[1]) * 1000 + path[0];
-    path[depth] = 0;
-    if(mem.find(key) == mem.end())
-        if(mem.find(key3) == mem.end())
-            return mem.find(key2) != mem.end();
-        else
-            return false;
-    else
-        if(mem.find(key3) == mem.end())
-            true;
-        else
-            return mem.find(key2) == mem.end();
+//     path[depth] = 0;
+//     path[depth] = feature2 + 1;
+//     long long key3 = (((path[4] * 1000 + path[3]) * 1000 + path[2])*1000 + path[1]) * 1000 + path[0];
+//     path[depth] = 0;
+//     if(mem.find(key) == mem.end())
+//         if(mem.find(key3) == mem.end())
+//             return mem.find(key2) != mem.end();
+//         else
+//             return false;
+//     else
+//         if(mem.find(key3) == mem.end())
+//             true;
+//         else
+//             return mem.find(key2) == mem.end();
 
-    return true;
-}
+//     return true;
+// }
 /**
  * Simple float-int pair.
  */
@@ -274,10 +305,6 @@ vector<int> getLeafConnections(instance_t* &inst, tree* t){
 
         return leafsLeft;
     }
-
-
-    
-
 }
 struct Edgy{
     int from;
@@ -372,8 +399,6 @@ tree* combineTrees(const vector<instance_t*> insts,const vector<instance_t*> glo
 
     for(instance_t* inst: globalInsts){
         vector<int> leafConnections = getLeafConnections(inst,combined);
-        if(leafConnections.size() == 1)
-            continue;
         if(inst->label == 0){
             fromSource[leafConnections[0]]++;
             if(leafConnections.size() == 2)
@@ -424,26 +449,32 @@ tree* combineTrees(const vector<instance_t*> insts,const vector<instance_t*> glo
 
 }
 
-tree_solutions* merge(const vector<instance_t*> insts,const vector<instance_t*> globalInsts, int feature, tree_solutions &left, tree_solutions &right){
+tree_solutions* merge(const vector<instance_t*> insts,const vector<instance_t*> globalInsts, int feature, tree_solutions &left, tree_solutions &right, int upper_bound){
     vector<tree*> merged = {};
     tree_solutions* mergedObj = new tree_solutions;
     mergedObj->upperBound = INF;
     mergedObj->lowerBound = INF;
     mergedObj->local_lowerBound = INF;
-    for (auto & r : right.trees)
-        for (auto & l : left.trees)
-            mergedObj->upperBound = min(mergedObj->upperBound, l->local_lowerBound + r->upperBound);
+    int mergedUpperBound = INF;
+    upper_bound++;
+    int c = 0;
     for (auto & r : right.trees) {
         for (auto & l : left.trees) {
-            if(l->local_lowerBound + r->lowerBound >= mergedObj->upperBound)
+            c++;
+            if(l->local_lowerBound + r->lowerBound >= upper_bound)
                 continue;
-            if(r->local_lowerBound + l->lowerBound >= mergedObj->upperBound)
+            if(r->local_lowerBound + l->lowerBound >= upper_bound)
                 continue;
             tree* combined = combineTrees(insts,globalInsts,feature, *l,*r);
             mergedObj->local_lowerBound = min(mergedObj->local_lowerBound, combined->local_lowerBound);
             mergedObj->lowerBound = min(mergedObj->lowerBound, combined->lowerBound);
             mergedObj->upperBound = min(mergedObj->upperBound, combined->upperBound);
+            upper_bound = min(upper_bound, combined->upperBound);
+            //mergedUpperBound = min(mergedUpperBound, combined->upperBound);
             merged.push_back(combined);
+            // if(merged.size() == 0){
+            //     cerr << "merged size 0" << endl;
+            // }
         }
     }
     
@@ -487,7 +518,8 @@ tree_solutions* calculate_smallest_misclassification(const vector<instance_t*> i
         tr->instances_true = instances_true;
         tr->instances_false = instances_false;
         tr->leaf_nodes = vector<tree*>(1,tr);
-        int upperBound = min(instances_true,instances_false) + globalInsts.size();
+        tr->local_lowerBound = min(instances_true,instances_false);
+        int upperBound = tr->local_lowerBound + globalInsts.size();
         for(instance_t* inst: globalInsts){
             if(inst->label==0)
                 instances_true++;
@@ -498,6 +530,7 @@ tree_solutions* calculate_smallest_misclassification(const vector<instance_t*> i
 
         tr->lowerBound = lowerBound;
         tr-> upperBound = upperBound;
+        //tr-> local_lowerBound = lowerBound;
 
         t.push_back(tr);
 
@@ -506,6 +539,7 @@ tree_solutions* calculate_smallest_misclassification(const vector<instance_t*> i
         leaf->lowerBound = lowerBound;
         leaf-> local_lowerBound = lowerBound;
         leaf->upperBound = upperBound;
+
         upper_bound = min(upperBound, upper_bound); 
         if (depth == 0) {
             //if depth == 0, then node must be a leaf.
@@ -514,6 +548,7 @@ tree_solutions* calculate_smallest_misclassification(const vector<instance_t*> i
             
             // Width = amount of features
             vector<tree_solutions*> viable_solutions {};
+            vector<pairs> mergeLater {};
             //ensure that leaf solution is included as possible solutions
             if(leaf->lowerBound <= upper_bound ){
                 viable_solutions.push_back(leaf);
@@ -522,12 +557,21 @@ tree_solutions* calculate_smallest_misclassification(const vector<instance_t*> i
                 delete leaf;
             int lowest_bound_sofar = upper_bound;
             int lowest_local_bound_sofar = upper_bound;
-            std::sort(feature_list.begin(), feature_list.end(), [depth, path](const int& a, const int& b) {
-                return compareByPath(a, b, depth, path);
-            });
+            // std::sort(feature_list.begin(), feature_list.end(), [depth, path](const int& a, const int& b) {
+            //     return compareByPath(a, b, depth, path);
+            // });
             for (int i : feature_list) {
-                if(depth == 2)
-                    cerr << i << endl;
+                // if(depth == 3){
+                //     cerr << "depth 3" << endl;
+                //     cerr << i << endl;
+                //     // int j = feature_list.back();
+                //     // int y = feature_list.front();
+                //     // if(i == j);
+                //     //     cerr << i << endl;
+                // }
+                // if(depth == 2){
+                //     cerr << i << endl;
+                // }
             //for (int i = 0; i < width; i++) {
                 // Create a new list of features that excludes the current feature
                 vector<int> reduced_feature_list = {};
@@ -569,6 +613,9 @@ tree_solutions* calculate_smallest_misclassification(const vector<instance_t*> i
                         globalRight.push_back(inst);
                     }
                 }
+                if((left.size() == 0 || right.size() == 0) && (globalLeft.size() == 0 || globalRight.size() == 0)){
+                    continue;
+                }
                 // Update the path (i + 1 will mean "all instances have feature i set to 0"),
                 // and then recurse into the left child
                 // In the end, reset the path
@@ -601,7 +648,18 @@ tree_solutions* calculate_smallest_misclassification(const vector<instance_t*> i
                     continue;
                 }
                 path[depth] = 0;
-                tree_solutions* viable_solution_set = merge(insts, globalInsts,i + 1, *left_misclassified, *right_misclassified);
+                upper_bound = min(upper_bound, right_misclassified->lowerBound + min_misclassification + globalInsts.size());
+                if(left_misclassified->trees.size() * right_misclassified->trees.size() > 50000){
+                    mergeLater.push_back(pairs(left_misclassified,right_misclassified, i + 1));
+                    continue;
+                    
+                }
+                //upper_bound = max(upper_bound, right_misclassified->local_lowerBound + left_misclassified->upperBound + globalInsts.size());
+                tree_solutions* viable_solution_set = merge(insts, globalInsts,i + 1, *left_misclassified, *right_misclassified, upper_bound);
+                if(viable_solution_set->trees.empty()){
+                    delete viable_solution_set;
+                    continue;
+                }
                 lowest_bound_sofar = min(viable_solution_set->lowerBound,lowest_bound_sofar);
                 lowest_local_bound_sofar = min(viable_solution_set->local_lowerBound,lowest_local_bound_sofar);
                 viable_solutions.push_back(viable_solution_set);
@@ -609,8 +667,25 @@ tree_solutions* calculate_smallest_misclassification(const vector<instance_t*> i
                 
                 
             }
+            std::sort(mergeLater.begin(), mergeLater.end(), compareBySolutionsAmount);
+            for(pairs p:mergeLater){
+                // cerr << "merge later" << endl;
 
+                tree_solutions* viable_solution_set = merge(insts, globalInsts,p.featureSplit, *p.solutionLeft, *p.solutionRight, upper_bound);
+                if(viable_solution_set->trees.empty()){
+                    delete viable_solution_set;
+                    continue;
+                }
+                lowest_bound_sofar = min(viable_solution_set->lowerBound,lowest_bound_sofar);
+                lowest_local_bound_sofar = min(viable_solution_set->local_lowerBound,lowest_local_bound_sofar);
+                viable_solutions.push_back(viable_solution_set);
+                upper_bound = min(viable_solution_set->upperBound, upper_bound);
+            }
 
+            // if(depth == 2){
+            //     cerr << "depth 3" << endl;
+            //     cerr << viable_solutions.size() << endl;
+            // }
             if(viable_solutions.empty()){
                 memCheck.insert({key,upper_bound});
                 return nullptr;
@@ -638,47 +713,62 @@ tree_solutions* calculate_smallest_misclassification(const vector<instance_t*> i
 }
 
 int main() {
-    const string filename = "soybean3.in";  // Replace with your .in file
-    vector<instance_t*> insts = readInstances(filename);
-    int depth = 2;
+    // const string filename = "anneal.in";  // Replace with your .in file
+    // vector<instance_t*> insts = readInstances(filename);
+    // int featureAmount = 40;
+    // int depth = 3;
+    // int instanceAmount = 800;
+    // float adversary_attack_power = 0.05;
+    // int height = insts.size();
+    // int width = insts[0]->features.size();
 
-    // Print out the instances
-    // for (const auto& instance : instances) {
-    //     //cout << "Label: " << instance->label << ", Features: ";
-    //     for (const auto& feature : instance->features) {
-    //         cout << feature << ' ';
-    //     }
-    //     cout << '\n';
-    //     delete instance; // delete the instance once it's processed to avoid memory leak
-    // }
 
-    // Read input, parse instances
-    //cout << "!";
-    // int depth;
-    // string line;
-    // vector<instance_t*> insts {};
+    int depth;
+    int featureAmount;
+    int instanceAmount;
+    float adversary_attack_power;
+    
+    string line;
+    vector<instance_t*> insts {};
+    cin >> featureAmount;
+    cin >> depth;
+    cin >> instanceAmount;
+    cin >> adversary_attack_power;
+    //cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    getline(cin, line);
+    getline(cin, line);
 
-    // cin >> depth;
-    // getline(cin, line);
-    // getline(cin, line);
+    // cerr << featureAmount << endl;
+    // cerr << depth << endl;
+    // cerr << instanceAmount << endl;
+    // cerr << adversary_attack_power << endl;
+    // cerr << line << endl;
 
-    // int width = line.size() / 2;
-    // int height = 0;
-    // while (line.size() > 0) {
-    //     vector<int> attr {};
-    //     for (int ix = 0; ix < width; ix++)
-    //         attr.push_back(line[2 + 2 * ix] - '0');
-    //     instance_t* inst = new instance_t;
-    //     *inst = {line[0] - '0', attr};
-    //     insts.push_back(inst);
+    int width = line.size() / 2;
+    int height = 0;
+    while (line.size() > 0) {
+        vector<int> attr {};
+        for (int ix = 0; ix < width; ix++)
+            attr.push_back(line[2 + 2 * ix] - '0');
+        instance_t* inst = new instance_t;
+        *inst = {line[0] - '0', attr};
+        insts.push_back(inst);
 
-    //     getline(cin, line);
-    //     height++;
-    // }
-
+        getline(cin, line);
+        height++;
+    }
+    // cerr <<"no problem here" << endl;
+    
+    
     // Preprocess dataset, remove unnecessary features
-    insts = filter_instects(insts);
-    randomlyChangeFeatures(insts);
+    if(height < instanceAmount || insts[0]->features.size() < featureAmount){
+        cout << -5 << endl;
+        cout.flush();
+    }
+    else {
+    insts = filter_instects(insts, featureAmount, instanceAmount);
+    //insts = refit_instants(insts, featureAmount, instanceAmount);
+    randomlyChangeFeatures(insts, adversary_attack_power);
 
     // vector<instance_t*> insts {};
     // int depth = 2;
@@ -709,18 +799,18 @@ int main() {
         feature_list.push_back(i);
     }
     //int depth = 3;
-    cerr << insts.size() << endl;
-    tree_solutions* optimalTree = calculate_smallest_misclassification(insts,globalInsts, depth, path, INF/2, feature_list);
-    tree* opt = optimalTree->trees[0];
-    tree* doubleCheck = combineTrees(insts,globalInsts,opt->featureSplit, *opt->leftChild, *opt->rightChild);
-    cerr << "doubleCheck->lowerBound" << endl;
-    cerr << doubleCheck->lowerBound << endl;
-    cerr << "doubleCheck->upperBound" << endl;
-    cerr << doubleCheck->upperBound << endl;
-
-    printTree(optimalTree->trees[0],optimalTree->trees.size());
-    
-    cout << optimalTree->lowerBound << endl;
-    cout << optimalTree->upperBound<< endl;
-    cout.flush();
+    // cerr << insts.size() << endl;
+    if(height < instanceAmount || insts[0]->features.size() < featureAmount){
+        cout << -5 << endl;
+        cout.flush();
+    }
+    else{
+        tree_solutions* optimalTree = calculate_smallest_misclassification(insts,globalInsts, depth, path, INF/2, feature_list);
+        int i = 0;
+        tree* opt = optimalTree->trees[0];
+        // printTree(optimalTree->trees[0],optimalTree->trees.size());
+        cout << optimalTree->lowerBound << endl;
+        cout.flush();
+    }
+    }
 }
