@@ -10,7 +10,7 @@ EXEC_NAME = "out.exe"
 os.chdir(DIRECTORY)
 if os.path.exists(EXEC_NAME):
     os.remove(EXEC_NAME)
-os.system(f"g++ murtree_robust_copy.cpp -o {EXEC_NAME}")
+os.system(f"g++ murtree_robust.cpp -o {EXEC_NAME}")
 
 number_of_features = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 depths = [1, 2, 3, 4, 5]
