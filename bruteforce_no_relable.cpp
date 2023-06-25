@@ -18,16 +18,21 @@ using namespace std::chrono;
 using namespace std;
 vector<tree*> bruteForce(int depth, vector<int> features){
     vector<tree*> family = {};
-    tree* leaf = new tree();
-    leaf->leaf_nodes.push_back(leaf);
-    family.push_back(leaf);
+    tree* leafTrue = new tree();
+    tree* leafFalse = new tree();
+    leafTrue->featureSplit = 0;
+    leafFalse->featureSplit = 1;
+    leafTrue->leaf_nodes.push_back(leafTrue);
+    leafFalse->leaf_nodes.push_back(leafFalse);
+    family.push_back(leafFalse);
+    family.push_back(leafTrue);
     if(depth == 0){
         return family;
     }
     
     
     for(int i: features){
-        if(depth == 3){
+        if(depth == 2){
             cerr << i << endl;
         }
         vector<int> reduced_feature_list = {};
@@ -55,7 +60,7 @@ vector<tree*> bruteForce(int depth, vector<int> features){
 }
 
 vector<int> getLeafConnections(instance_t* &inst, tree* t){
-    if(t->featureSplit == 0)
+    if(t->leftChild == nullptr)
         return std::vector<int>(1,0);
     if(inst->features[t->featureSplit-1] == 0)
         return getLeafConnections(inst,t->leftChild);
@@ -97,67 +102,18 @@ struct Edgy{
 
 int evaluate(tree* t, vector<instance_t*> insts){
     vector<tree*> leafs = t->leaf_nodes;
-        
-    int currentNode = 1 + leafs.size();
-    vector<int> fromSource(leafs.size(), 0);
-    vector<int> toSink(leafs.size(), 0);
-    vector<vector<int>> leafToLeaf(leafs.size(), vector<int>(leafs.size(), 0));
-    vector<Edgy> edges = {};
+    int misclassifications = 0;
     for(instance_t* inst: insts){
         vector<int> leafConnections = getLeafConnections(inst,t);
-        
-        if(inst->label == 0){
-            
-            fromSource[leafConnections[0]]++;
-            if(leafConnections.size() == 2)
-                leafToLeaf[leafConnections[0]][leafConnections[1]]++;
-            if(leafConnections.size() > 2){
-                int startNode = leafConnections[0] + 1;
-                edges.push_back(Edgy(startNode,currentNode,1));
-                for (size_t i = 1; i < leafConnections.size(); i++) {
-                    edges.push_back(Edgy(currentNode,leafConnections[i] + 1,1));
-                }
-                currentNode++;
-            }
-        }
-        if(inst->label == 1){
-            toSink[leafConnections[0]]++;
-            if(leafConnections.size() == 2)
-                leafToLeaf[leafConnections[1]][leafConnections[0]]++;
-            if(leafConnections.size() > 2){
-                edges.push_back(Edgy(currentNode,leafConnections[0] + 1,1));
-                for (size_t i = 1; i < leafConnections.size(); ++i) {
-                    edges.push_back(Edgy(leafConnections[i] + 1,currentNode,1));
-                }
-                currentNode++;
+        for(int connection: leafConnections){
+            if(leafs[connection]->featureSplit != inst->label){
+                misclassifications++;
+                break;
             }
         }
         
-    }
-
-    
-    int source = 0;
-    int sink = currentNode;
-    Graph g = Graph(currentNode+1);
-
-    for(int i = 0; i < leafs.size(); i++){
-        if(fromSource[i] > 0)
-            g.addEdge(source, i + 1, fromSource[i]);
-        if(toSink[i] > 0)
-            g.addEdge(i + 1, sink, toSink[i]);
         
-        for(int j = 0; j < leafs.size(); j++){
-            if(leafToLeaf[i][j] > 0)
-                g.addEdge(i+1, j+1, leafToLeaf[i][j]);
-        }
     }
-    for(Edgy e: edges){
-        g.addEdge(e.from, e.to, e.capacity);
-    }
-
-    int misclassifications = g.getMaxFlow(source, sink);
-
-   
     return misclassifications;
 
 
@@ -251,7 +207,6 @@ void randomlyChangeFeatures(std::vector<instance_t*>& instances, float adversary
 }
 
 int main(){
-    // heart-cleveland,20,2,100,0.04,
     string filename = "heart-cleveland.in";  // Replace with your .in file
     vector<instance_t*> insts = readInstances(filename);
 
@@ -302,7 +257,7 @@ int main(){
         cout.flush();
     }
     else {
-    insts = filter_instects(insts, featureAmount, instanceAmount);
+        insts = filter_instects(insts, featureAmount, instanceAmount);
 
     randomlyChangeFeatures(insts, adversary_attack_power);
 
@@ -316,8 +271,10 @@ int main(){
         cout.flush();
     }
     else {
-    auto start = high_resolution_clock::now();
+    // auto start = high_resolution_clock::now();
 
+
+    
     vector<tree*> family = bruteForce(depth, feature_list);
     int lowest = INF;
     tree* bestTree = nullptr;
@@ -334,10 +291,11 @@ int main(){
         }
         //cerr << c << endl;
     }
-    auto stop = high_resolution_clock::now();
-    auto duration = duration_cast<microseconds>(stop - start);
-    cout << "time: "<< endl;
-    cout << duration.count() << endl;
+    // auto stop = high_resolution_clock::now();
+    // auto duration = duration_cast<microseconds>(stop - start);
+    // cout << "time: "<< endl;
+    // cout << duration.count() << endl;
+
     // for (tree* leaf: leafs) {
     //         cout << leaf->instances_true << " " << leaf->instances_false << endl;
     //     }

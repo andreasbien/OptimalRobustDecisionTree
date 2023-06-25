@@ -4,22 +4,22 @@ import time
 import pandas as pd
 
 DIRECTORY = os.path.realpath(os.path.dirname(__file__))
-EXEC_NAME = "out.exe"
+EXEC_NAME = "outer.exe"
 
 # Compile program
 os.chdir(DIRECTORY)
 if os.path.exists(EXEC_NAME):
     os.remove(EXEC_NAME)
-os.system(f"g++ murtree_robust_copy.cpp -o {EXEC_NAME}")
+os.system(f"g++ bruteforce_no_relable.cpp -o {EXEC_NAME}")
 
 number_of_features = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-depths = [1, 2, 3, 4, 5]
+depths = [1, 2]
 number_of_instances = [100, 200, 400, 600, 800, 1000]
 adversary_attack_power = [0.005, 0.01, 0.02, 0.03, 0.04, 0.05]
 data = []
+timeouts = []
 def run_with_input(filename):
-    timeouts = []
-    notFeasible = []
+    
     # timeouts[filename] = []
 
     f = open(f"{DIRECTORY}/datasets/{filename}.in")
@@ -32,11 +32,6 @@ def run_with_input(filename):
             for instanceAmount in number_of_instances:
                 for attackPower in adversary_attack_power:
                     found = False
-                    for t in notFeasible:
-                        if t[0] <= featureAmount and t[1] <= instanceAmount:
-                            data.append([filename, featureAmount, depth, instanceAmount, attackPower, -5, -5])
-                            found = True
-                            break
                     for t in timeouts:
                         if t[0] <= featureAmount and t[1] <= depth and t[2] <= instanceAmount and t[2]*t[3] <= attackPower * instanceAmount:
                             #write something in the file idk like add something to the dataframe
@@ -58,13 +53,12 @@ def run_with_input(filename):
                         data.append([filename, featureAmount, depth, instanceAmount, attackPower, -1, -1])
                         timeouts.append([featureAmount, depth, instanceAmount, attackPower - 0.001])
                         continue
-                    wrong = -10
+                    wrong = -1
                     # print(out)
                     try:
                         wrong = int(out)
                         if(wrong == -5):
                             data.append([filename, featureAmount, depth, instanceAmount, attackPower, -5, -5])
-                            notFeasible.append([featureAmount, instanceAmount])
                         else:
                             data.append([filename, featureAmount, depth, instanceAmount, attackPower, time.time() - start_time, wrong])
                     except:
@@ -96,6 +90,8 @@ for name in sorted(set(j.split(".")[0] for j in os.listdir(f"{DIRECTORY}/dataset
     if not run_with_input(name):
         wrong_results.append(name)
     print(f"\033[34;1mFinished in {time.time() - curr_time:.3f} seconds\033[0m")
+    df = pd.DataFrame(data, columns=['name', 'featureAmount', 'depth', 'instanceAmount', 'attackPower', 'runtime', 'wrong'])
+    df.to_csv("bruteforcedataWithScore.csv", index=False)
     # c+=1
     # if(c > 2):
     #     break
@@ -106,6 +102,6 @@ if wrong_results:
 else:
     print("\n\033[32;1mSuccess!\033[0m")
 df = pd.DataFrame(data, columns=['name', 'featureAmount', 'depth', 'instanceAmount', 'attackPower', 'runtime', 'wrong'])
-df.to_csv("datawithanswers.csv", index=False)
+df.to_csv("bruteforcedataWithScore.csv", index=False)
 
 print(f"\033[34;1mFinished all tests in {time.time() - start_time:.3f} seconds\033[0m")

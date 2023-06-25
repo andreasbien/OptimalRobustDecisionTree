@@ -13,7 +13,7 @@ vector<instance_t*> readInstances(const string& filename) {
     vector<instance_t*> instances;
 
     // Open the file
-    ifstream file(filename);
+    ifstream file("datasets/" + filename);
     if (!file) {
         cerr << "Could not open the file: " << filename << endl;
         return instances;  // Return empty vector
