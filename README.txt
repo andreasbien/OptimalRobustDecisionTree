@@ -10,3 +10,5 @@ experiments.ipynb contains a couple of code blocks that are used to generate the
 
 
 readDatasets.cpp is a helper function that you can use if you want to run the algorithm on it's c++ file. Note, you will then need to comment out some code that reads input and replace it with some hard-coded values.
+
+I am still working on this for fun. If you want to assess this work before the report was submitted, just check out the last commit on the 25th of June.
