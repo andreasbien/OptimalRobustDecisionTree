@@ -298,7 +298,8 @@ tree* combineTrees( vector<instance_t*> insts, vector<instance_t*> globalInsts, 
     combined->featureSplit = feature;
     combined->leftChild= &left;
     combined->rightChild = &right;
-
+    if(combined->featureSplit == 2 && left.featureSplit == 3 && right.featureSplit == 3 && left.upperBound == 6 && right.upperBound == 6)
+        printTree(combined, 0);
     vector<tree*> leftLeafNodes = left.leaf_nodes;
     vector<tree*> rightLeafNodes = right.leaf_nodes;
 
@@ -317,6 +318,10 @@ tree* combineTrees( vector<instance_t*> insts, vector<instance_t*> globalInsts, 
         toSink[currentNode-1] = leaf->instances_false;
         currentNode++;
 
+    }
+    vector<int> minAll(leafs.size(), 0);
+    for(int i = 0; i < leafs.size(); i++){
+        minAll[i] = min(fromSource[i],toSink[i]);
     }
     for(instance_t* inst: insts){
         vector<int> leafConnections = getLeafConnections(inst,combined);
@@ -351,16 +356,20 @@ tree* combineTrees( vector<instance_t*> insts, vector<instance_t*> globalInsts, 
         
     }
 
-    
+    vector<int> mins(leafs.size(), 0);
+    for(int i = 0; i < leafs.size(); i++){
+        mins[i] = min(fromSource[i],toSink[i]);
+    }
     int source = 0;
     int sink = currentNode;
     Graph g = Graph(currentNode+1);
 
     for(int i = 0; i < leafs.size(); i++){
-        if(fromSource[i] > 0)
+        if(fromSource[i] > 0 && toSink[i] > 0)
             g.addEdge(source, i + 1, fromSource[i]);
         if(toSink[i] > 0)
             g.addEdge(i + 1, sink, toSink[i]);
+        
         
         for(int j = 0; j < leafs.size(); j++){
             if(leafToLeaf[i][j] > 0)
@@ -421,6 +430,7 @@ tree* combineTrees( vector<instance_t*> insts, vector<instance_t*> globalInsts, 
         gLower.addEdge(e.from, e.to, e.capacity);
     }
     combined->lowerBound = gLower.getMaxFlow(source, sink);
+    
 
     return combined;
 
@@ -468,6 +478,7 @@ tree_solutions* calculate_smallest_misclassification( vector<instance_t*> insts,
     long long x[5] = {path[0], path[1], path[2], path[3], path[4]};
     sort(x, x + sizeof(x) / sizeof(x[0]));
     long long key = (((x[4] * 1000 + x[3]) * 1000 + x[2])*1000 + x[1]) * 1000 + x[0];
+    
     if(memCheck[key] >= upper_bound){
         return nullptr;
     }
@@ -535,12 +546,12 @@ tree_solutions* calculate_smallest_misclassification( vector<instance_t*> insts,
 
             for (int i : feature_list) {
 
-                if(depth == 5){
-                    cerr << "depth 5" << endl;
-                    cerr << i << endl;
-                }
-                if(depth == 4)
-                    cerr << i << endl;
+                // if(depth == 5){
+                //     cerr << "depth 5" << endl;
+                //     cerr << i << endl;
+                // }
+                // if(depth == 4)
+                //     cerr << i << endl;
                 
 
                 vector<int> reduced_feature_list = {};
@@ -590,34 +601,34 @@ tree_solutions* calculate_smallest_misclassification( vector<instance_t*> insts,
                 // and then recurse into the left child
                 // In the end, reset the path
                 // the upper bound is set to (upperBound - 1), as any better solution must be at least 1 better than the current best
-                path[depth] = i + 1;
+                path[depth - 1] = i + 1;
                 tree_solutions* left_misclassified = calculate_smallest_misclassification(left, globalLeft, depth - 1, path, upper_bound, reduced_feature_list);
                 if(left_misclassified == nullptr){
-                    path[depth] = 0;
+                    path[depth - 1] = 0;
                     continue;
                 }
 
                 int min_misclassification = left_misclassified -> lowerBound;
                 int local_min_misclassification = left_misclassified -> local_lowerBound;
                 if(min_misclassification > upper_bound){
-                    path[depth] = 0;
+                    path[depth - 1] = 0;
                     continue;
                     
                 }
                 // If the left child is already at least as high as the upper bound, don't bother recursing into the right child
-                path[depth] = 0;
+                path[depth - 1] = 0;
 
                 // Update the path (i + 501 will mean "all instances have feature i set to 1"),
                 // and then recurse into the right child
                 // In the end, reset the path
                 // Note that the new upper bound is set to (upper_bound - left_misclassified), to take the misclassification of the left side into account as well
-                path[depth] = 501 + i;
+                path[depth - 1] = 501 + i;
                 tree_solutions* right_misclassified = calculate_smallest_misclassification(right, globalRight, depth - 1, path, upper_bound - local_min_misclassification, reduced_feature_list);
                 if(right_misclassified == nullptr){
-                    path[depth] = 0;
+                    path[depth - 1] = 0;
                     continue;
                 }
-                path[depth] = 0;
+                path[depth - 1] = 0;
                 upper_bound = min(upper_bound, right_misclassified->lowerBound + min_misclassification + globalInsts.size());
                 if(left_misclassified->trees.size() * right_misclassified->trees.size() > 50000){
                     mergeLater.push_back(pairs(left_misclassified,right_misclassified, i + 1));
@@ -680,39 +691,45 @@ tree_solutions* calculate_smallest_misclassification( vector<instance_t*> insts,
 
 
 int main() {
-
-    
-
-
-    int depth;
-    int featureAmount;
-    int instanceAmount;
-    float adversary_attack_power;
-    
-    string line;
-    vector<instance_t*> insts {};
-    cin >> featureAmount;
-    cin >> depth;
-    cin >> instanceAmount;
-    cin >> adversary_attack_power;
-    getline(cin, line);
-    getline(cin, line);
+    // ['lymph', 10, 5, 100, 0.005, -2]
+    int featureAmount = 10;
+    int depth = 5;
+    int instanceAmount = 100;
+    float adversary_attack_power = 0.005;
+    string dataset = "lymph.in";
+    vector<instance_t*> insts = readInstances(dataset);
+    int height = insts.size();
 
 
+//    int depth;
+//    int featureAmount;
+//    int instanceAmount;
+//    float adversary_attack_power;
+//
+  //  string line;
+    //vector<instance_t*> insts {};
+//    cin >> featureAmount;
+//    cin >> depth;
+//    cin >> instanceAmount;
+//    cin >> adversary_attack_power;
+//    getline(cin, line);
+//    getline(cin, line);
 
-    int width = line.size() / 2;
-    int height = 0;
-    while (line.size() > 0) {
-        vector<int> attr {};
-        for (int ix = 0; ix < width; ix++)
-            attr.push_back(line[2 + 2 * ix] - '0');
-        instance_t* inst = new instance_t;
-        *inst = {line[0] - '0', attr};
-        insts.push_back(inst);
 
-        getline(cin, line);
-        height++;
-    }
+
+//    int width = line.size() / 2;
+//    int height = 0;
+//    while (line.size() > 0) {
+//        vector<int> attr {};
+//        for (int ix = 0; ix < width; ix++)
+//            attr.push_back(line[2 + 2 * ix] - '0');
+//        instance_t* inst = new instance_t;
+//        *inst = {line[0] - '0', attr};
+//        insts.push_back(inst);
+
+//        getline(cin, line);
+//        height++;
+//    }
     
     
     // Preprocess dataset, remove unnecessary features
