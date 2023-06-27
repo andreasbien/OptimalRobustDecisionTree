@@ -692,44 +692,44 @@ tree_solutions* calculate_smallest_misclassification( vector<instance_t*> insts,
 
 int main() {
     // ['lymph', 10, 5, 100, 0.005, -2]
-    int featureAmount = 10;
-    int depth = 5;
-    int instanceAmount = 100;
-    float adversary_attack_power = 0.005;
-    string dataset = "lymph.in";
-    vector<instance_t*> insts = readInstances(dataset);
-    int height = insts.size();
+    // int featureAmount = 10;
+    // int depth = 5;
+    // int instanceAmount = 100;
+    // float adversary_attack_power = 0.005;
+    // string dataset = "lymph.in";
+    // vector<instance_t*> insts = readInstances(dataset);
+    // int height = insts.size();
 
 
-//    int depth;
-//    int featureAmount;
-//    int instanceAmount;
-//    float adversary_attack_power;
-//
-  //  string line;
-    //vector<instance_t*> insts {};
-//    cin >> featureAmount;
-//    cin >> depth;
-//    cin >> instanceAmount;
-//    cin >> adversary_attack_power;
-//    getline(cin, line);
-//    getline(cin, line);
+   int depth;
+   int featureAmount;
+   int instanceAmount;
+   float adversary_attack_power;
+
+   string line;
+    vector<instance_t*> insts {};
+   cin >> featureAmount;
+   cin >> depth;
+   cin >> instanceAmount;
+   cin >> adversary_attack_power;
+   getline(cin, line);
+   getline(cin, line);
 
 
 
-//    int width = line.size() / 2;
-//    int height = 0;
-//    while (line.size() > 0) {
-//        vector<int> attr {};
-//        for (int ix = 0; ix < width; ix++)
-//            attr.push_back(line[2 + 2 * ix] - '0');
-//        instance_t* inst = new instance_t;
-//        *inst = {line[0] - '0', attr};
-//        insts.push_back(inst);
+   int width = line.size() / 2;
+   int height = 0;
+   while (line.size() > 0) {
+       vector<int> attr {};
+       for (int ix = 0; ix < width; ix++)
+           attr.push_back(line[2 + 2 * ix] - '0');
+       instance_t* inst = new instance_t;
+       *inst = {line[0] - '0', attr};
+       insts.push_back(inst);
 
-//        getline(cin, line);
-//        height++;
-//    }
+       getline(cin, line);
+       height++;
+   }
     
     
     // Preprocess dataset, remove unnecessary features
