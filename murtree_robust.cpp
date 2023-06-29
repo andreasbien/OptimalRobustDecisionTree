@@ -594,9 +594,7 @@ tree_solutions* calculate_smallest_misclassification( vector<instance_t*> insts,
                         globalRight.push_back(inst);
                     }
                 }
-                if((left.size() == 0 || right.size() == 0) && (globalLeft.size() == 0 || globalRight.size() == 0)){
-                    continue;
-                }
+
                 // Update the path (i + 1 will mean "all instances have feature i set to 0"),
                 // and then recurse into the left child
                 // In the end, reset the path
