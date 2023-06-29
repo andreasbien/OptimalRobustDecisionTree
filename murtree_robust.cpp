@@ -365,7 +365,7 @@ tree* combineTrees( vector<instance_t*> insts, vector<instance_t*> globalInsts, 
     Graph g = Graph(currentNode+1);
 
     for(int i = 0; i < leafs.size(); i++){
-        if(fromSource[i] > 0 && toSink[i] > 0)
+        if(fromSource[i] > 0)
             g.addEdge(source, i + 1, fromSource[i]);
         if(toSink[i] > 0)
             g.addEdge(i + 1, sink, toSink[i]);
